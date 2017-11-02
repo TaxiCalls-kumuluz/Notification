@@ -2,8 +2,8 @@ package com.taxicalls.notification.resources;
 
 import com.taxicalls.notification.model.Notification;
 import com.taxicalls.protocol.Response;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.enterprise.context.RequestScoped;
@@ -11,22 +11,20 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-@Path("/notifications")
+@Path("/checks")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
-public class NotificationsResource {
+public class ChecksResource {
 
     private final EntityManager em;
 
-    public NotificationsResource() {
+    public ChecksResource() {
         Map<String, String> env = System.getenv();
         Map<String, Object> configOverrides = new HashMap<>();
         env.keySet().forEach((envName) -> {
@@ -41,27 +39,16 @@ public class NotificationsResource {
     }
 
     @POST
-    public Response createNotification(Notification notification) {
-        em.getTransaction().begin();
-        em.persist(notification);
-        em.getTransaction().commit();
-        return Response.successful(notification);
-    }
-
-    @GET
-    public Response getNotifications() {
-        List<Notification> notifications = em.createNamedQuery("Notification.findAll", Notification.class).getResultList();
-        return Response.successful(notifications);
-    }
-
-    @GET
-    @Path("/{id}")
-    public Response getNotification(@PathParam("id") Long id) {
-        Notification notification = em.find(Notification.class, id);
-        if (notification == null) {
-            return Response.notFound();
+    public Response checkNotifications(CheckNotificationsRequest checkNotificationsRequest) {
+        Long id = checkNotificationsRequest.getId();
+        String entity = checkNotificationsRequest.getEntity();
+        Collection<Notification> notifications = em.createNamedQuery("Notification.findAll", Notification.class).getResultList();
+        for (Notification notification : notifications) {
+            if (notification.getToEntity().equals(entity) && notification.getToId().equals(id)) {
+                notifications.add(notification);
+            }
         }
-        return Response.successful(notification);
+        return Response.successful(notifications);
     }
 
 }

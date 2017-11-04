@@ -1,12 +1,13 @@
 package com.taxicalls.notification.resources;
 
+import com.taxicalls.notification.model.Driver;
 import com.taxicalls.notification.model.Notification;
+import com.taxicalls.notification.model.Passenger;
 import com.taxicalls.protocol.Response;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.RequestScoped;
 import javax.persistence.EntityManager;
@@ -18,15 +19,17 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-@Path("/checks")
+@Path("/drivers")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
-public class ChecksResource {
+public class DriversResource {
+
+    private static final Logger LOGGER = Logger.getLogger(DriversResource.class.getName());
 
     private final EntityManager em;
 
-    public ChecksResource() {
+    public DriversResource() {
         Map<String, String> env = System.getenv();
         Map<String, Object> configOverrides = new HashMap<>();
         env.keySet().forEach((envName) -> {
@@ -41,21 +44,16 @@ public class ChecksResource {
     }
 
     @POST
-    public Response checkNotifications(CheckNotificationsRequest checkNotificationsRequest) {
-        Long id = checkNotificationsRequest.getId();
-        String entity = checkNotificationsRequest.getEntity();
-        Collection<Notification> notifications = em.createNamedQuery("Notification.findAll", Notification.class).getResultList();
-        Collection<Notification> filteredNotifications = new ArrayList<>();
+    public Response chooseDriver(ChooseDriverRequest chooseDriverRequest) {
+        LOGGER.log(Level.INFO, "chooseDriver() invoked");
+        Notification notification = new Notification();
+        notification.setFromEntity(Passenger.class.getSimpleName());
+        notification.setFromId(chooseDriverRequest.getPassenger().getId());
+        notification.setToEntity(Driver.class.getSimpleName());
+        notification.setToId(chooseDriverRequest.getDriver().getId());
         em.getTransaction().begin();
-        for (Notification notification : notifications) {
-            if (notification.getToEntity().equals(entity) && notification.getToId().equals(id) && notification.getSentTime() == null) {
-                filteredNotifications.add(notification);
-                notification.setSentTime(new Date());
-                em.merge(notification);
-            }
-        }
+        em.persist(notification);
         em.getTransaction().commit();
-        return Response.successful(filteredNotifications);
+        return Response.successful(notification);
     }
-
 }

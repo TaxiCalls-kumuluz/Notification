@@ -15,6 +15,12 @@ public class Response {
     private final String message;
     private final Object entity;
 
+    protected Response() {
+        this.status = null;
+        this.message = null;
+        this.entity = null;
+    }
+
     public Response(Status status) {
         this.status = status;
         this.message = null;

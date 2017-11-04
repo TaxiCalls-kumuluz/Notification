@@ -1,12 +1,14 @@
 package com.taxicalls.notification.resources;
 
+import com.taxicalls.notification.model.Driver;
 import com.taxicalls.notification.model.Notification;
+import com.taxicalls.notification.model.Passenger;
+import com.taxicalls.notification.model.Trip;
 import com.taxicalls.protocol.Response;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.enterprise.context.RequestScoped;
 import javax.persistence.EntityManager;
@@ -18,15 +20,17 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-@Path("/checks")
+@Path("/trips")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RequestScoped
-public class ChecksResource {
+public class TripsResource {
+
+    private static final Logger LOGGER = Logger.getLogger(TripsResource.class.getName());
 
     private final EntityManager em;
 
-    public ChecksResource() {
+    public TripsResource() {
         Map<String, String> env = System.getenv();
         Map<String, Object> configOverrides = new HashMap<>();
         env.keySet().forEach((envName) -> {
@@ -41,21 +45,18 @@ public class ChecksResource {
     }
 
     @POST
-    public Response checkNotifications(CheckNotificationsRequest checkNotificationsRequest) {
-        Long id = checkNotificationsRequest.getId();
-        String entity = checkNotificationsRequest.getEntity();
-        Collection<Notification> notifications = em.createNamedQuery("Notification.findAll", Notification.class).getResultList();
-        Collection<Notification> filteredNotifications = new ArrayList<>();
+    public Response createTrip(Trip trip) {
+        LOGGER.log(Level.INFO, "createTrip() invoked");
+        Notification notification = new Notification();
+        notification.setFromEntity(Driver.class.getSimpleName());
+        notification.setFromId(trip.getDriver().getId());
+        notification.setToEntity(Passenger.class.getSimpleName());
         em.getTransaction().begin();
-        for (Notification notification : notifications) {
-            if (notification.getToEntity().equals(entity) && notification.getToId().equals(id) && notification.getSentTime() == null) {
-                filteredNotifications.add(notification);
-                notification.setSentTime(new Date());
-                em.merge(notification);
-            }
+        for (Passenger passenger : trip.getPassengers()) {
+            notification.setToId(passenger.getId());
+            em.persist(notification);
         }
         em.getTransaction().commit();
-        return Response.successful(filteredNotifications);
+        return Response.successful(notification);
     }
-
 }

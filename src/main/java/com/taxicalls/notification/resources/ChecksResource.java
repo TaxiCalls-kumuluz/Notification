@@ -48,6 +48,12 @@ public class ChecksResource {
         Collection<Notification> filteredNotifications = new ArrayList<>();
         em.getTransaction().begin();
         for (Notification notification : notifications) {
+            if (notification.getToId() == null) {
+                continue;
+            }
+            if (notification.getToEntity() == null) {
+                continue;
+            }
             if (notification.getToEntity().equals(entity) && notification.getToId().equals(id) && notification.getSentTime() == null) {
                 filteredNotifications.add(notification);
                 notification.setSentTime(new Date());

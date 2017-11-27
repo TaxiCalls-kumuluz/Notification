@@ -70,6 +70,12 @@ public class Driver implements Serializable {
         this.status = status;
     }
 
+    public void setCar(String car) {
+    }
+
+    public void setAccount(String account) {
+    }
+
     public Coordinate getAtualCoordinate() {
         return new Coordinate(atualLongitude, atualLatitude);
     }

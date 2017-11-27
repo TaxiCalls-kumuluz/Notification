@@ -52,6 +52,8 @@ public class TripsResource {
         notification.setFromId(trip.getDriver().getId());
         notification.setToEntity(Passenger.class.getSimpleName());
         em.getTransaction().begin();
+        notification.setToId(trip.getAuthor().getId());
+        em.persist(notification);
         for (Passenger passenger : trip.getPassengers()) {
             notification.setToId(passenger.getId());
             em.persist(notification);
